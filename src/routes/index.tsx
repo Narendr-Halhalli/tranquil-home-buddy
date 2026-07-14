@@ -1,24 +1,205 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { Droplets, Zap, Shield, Wallet, TrendingUp, TrendingDown, Download, FileText } from "lucide-react";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import type { MonthRecord, Settings } from "@/lib/mps-store";
+import {
+  DEFAULT_SETTINGS,
+  currentMonthKey,
+  formatMonthKey,
+  MONTH_NAMES,
+  waterConsumption,
+  electricityUnits,
+  watchmanTotal,
+  monthTotal,
+  completeness,
+  analytics,
+  prevMonthKey,
+} from "@/lib/mps-store";
+import { ProgressRing } from "@/components/mps/ProgressRing";
+import { SettingsButton } from "@/components/mps/SettingsButton";
+import { exportCSV, exportPDF } from "@/lib/mps-export";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: Dashboard,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Dashboard() {
+  const [records] = useLocalStorage<MonthRecord[]>("mps.records", []);
+  const [settings, setSettings] = useLocalStorage<Settings>("mps.settings", DEFAULT_SETTINGS);
+  const [activeMonth, setActiveMonth] = useLocalStorage<string>("mps.activeMonth", currentMonthKey());
+
+  const rec = useMemo(() => records.find(r => r.month === activeMonth), [records, activeMonth]);
+  const prev = useMemo(() => records.find(r => r.month === prevMonthKey(activeMonth)), [records, activeMonth]);
+  const pct = completeness(rec);
+  const a = useMemo(() => analytics(records, activeMonth), [records, activeMonth]);
+
+  const now = new Date();
+  const [y, m] = activeMonth.split("-").map(Number);
+  const isCurrent = activeMonth === currentMonthKey();
+
+  const c = settings.currency;
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="mps-fade-in space-y-6 pb-32">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-xs font-medium uppercase tracking-wider text-primary/80">{settings.apartmentName}</div>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
+            {MONTH_NAMES[m-1]} <span className="text-slate-400">{y}</span>
+          </h1>
+          <div className="mt-1 text-sm text-slate-500">
+            {isCurrent ? now.toLocaleDateString(undefined, { weekday:"long", day:"numeric", month:"long" }) : formatMonthKey(activeMonth)}
+          </div>
+        </div>
+        <SettingsButton settings={settings} setSettings={setSettings} />
+      </div>
+
+      {/* Month selector */}
+      <MonthSelect value={activeMonth} onChange={setActiveMonth} />
+
+      {/* Hero card */}
+      <div className="relative overflow-hidden rounded-[28px] bg-white/80 backdrop-blur-xl border border-white/70 shadow-[0_20px_60px_-20px_rgba(59,130,246,0.35)] p-6">
+        <div className="flex items-center gap-6">
+          <ProgressRing value={pct} label="Expenses Entered" sublabel={`${Math.round(pct/33.4)}/3 modules`} />
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Monthly Total</div>
+            <div className="mt-1 text-4xl font-bold tracking-tight text-slate-900">
+              {c}{monthTotal(rec).toLocaleString()}
+            </div>
+            <DiffBadge diff={a.diff} currency={c} />
+          </div>
+        </div>
+      </div>
+
+      {/* Four cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard
+          icon={<Droplets size={18}/>}
+          label="Water Bill"
+          value={`${c}${(rec?.water?.bwssb ?? 0).toLocaleString()}`}
+          delta={(rec?.water?.bwssb ?? 0) - (prev?.water?.bwssb ?? 0)}
+          currency={c}
+          tint="from-sky-400 to-blue-500"
+        />
+        <StatCard
+          icon={<Zap size={18}/>}
+          label="Electricity"
+          value={`${c}${(rec?.electricity?.bill ?? 0).toLocaleString()}`}
+          delta={(rec?.electricity?.bill ?? 0) - (prev?.electricity?.bill ?? 0)}
+          currency={c}
+          tint="from-amber-400 to-orange-500"
+        />
+        <StatCard
+          icon={<Shield size={18}/>}
+          label="Watchman"
+          value={`${c}${watchmanTotal(rec?.watchman).toLocaleString()}`}
+          delta={watchmanTotal(rec?.watchman) - watchmanTotal(prev?.watchman)}
+          currency={c}
+          tint="from-violet-400 to-indigo-500"
+        />
+        <StatCard
+          icon={<Wallet size={18}/>}
+          label="Total Expense"
+          value={`${c}${monthTotal(rec).toLocaleString()}`}
+          delta={a.diff}
+          currency={c}
+          tint="from-emerald-400 to-teal-500"
+        />
+      </div>
+
+      {/* Live details */}
+      <div className="rounded-[28px] bg-white/80 backdrop-blur-xl border border-white/70 shadow-sm p-5">
+        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">This Month</h3>
+        <div className="mt-3 divide-y divide-slate-100">
+          <Row label="Water Consumption" value={`${waterConsumption(rec?.water).total} units`} />
+          <Row label="Electricity Units" value={`${electricityUnits(rec?.electricity)} kWh`} />
+          <Row label="Watchman Extras" value={`${c}${((rec?.watchman?.bonus ?? 0) + (rec?.watchman?.extra ?? 0)).toLocaleString()}`} />
+        </div>
+      </div>
+
+      {/* Analytics */}
+      <div className="rounded-[28px] bg-white/80 backdrop-blur-xl border border-white/70 shadow-sm p-5">
+        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Analytics</h3>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <AnalyticTile label="Previous Month" value={`${c}${a.prevTotal.toLocaleString()}`} />
+          <AnalyticTile label="Average Monthly" value={`${c}${Math.round(a.avg).toLocaleString()}`} />
+          <AnalyticTile label="Highest" value={a.highest.month === "-" ? "—" : `${c}${a.highest.total.toLocaleString()}`} sub={a.highest.month === "-" ? "" : formatMonthKey(a.highest.month)} />
+          <AnalyticTile label="Lowest" value={a.lowest.month === "-" ? "—" : `${c}${a.lowest.total.toLocaleString()}`} sub={a.lowest.month === "-" ? "" : formatMonthKey(a.lowest.month)} />
+          <div className="col-span-2">
+            <AnalyticTile label={`Total ${activeMonth.split("-")[0]}`} value={`${c}${a.yearTotal.toLocaleString()}`} highlight />
+          </div>
+        </div>
+      </div>
+
+      {/* Exports */}
+      <div className="flex gap-3">
+        <button onClick={() => exportCSV(records, settings)} className="flex-1 flex items-center justify-center gap-2 rounded-full bg-white/80 backdrop-blur-xl border border-white/70 py-3.5 font-medium text-slate-700 hover:bg-white transition-all shadow-sm">
+          <Download size={16}/> Export CSV
+        </button>
+        <button onClick={() => exportPDF(records, settings)} className="flex-1 flex items-center justify-center gap-2 rounded-full bg-primary text-white py-3.5 font-medium shadow-lg shadow-primary/30 hover:scale-[1.01] transition-all">
+          <FileText size={16}/> PDF Report
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MonthSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [y, m] = value.split("-");
+  const years: number[] = [];
+  const cy = new Date().getFullYear();
+  for (let i = cy - 3; i <= cy + 1; i++) years.push(i);
+  return (
+    <div className="flex gap-2">
+      <select value={m} onChange={e => onChange(`${y}-${e.target.value}`)} className="flex-1 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/70 px-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40">
+        {MONTH_NAMES.map((n, i) => <option key={n} value={String(i+1).padStart(2,"0")}>{n}</option>)}
+      </select>
+      <select value={y} onChange={e => onChange(`${e.target.value}-${m}`)} className="w-28 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/70 px-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40">
+        {years.map(yr => <option key={yr} value={yr}>{yr}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function StatCard({ icon, label, value, delta, currency, tint }: { icon: React.ReactNode; label: string; value: string; delta: number; currency: string; tint: string }) {
+  return (
+    <div className="rounded-[24px] bg-white/85 backdrop-blur-xl border border-white/70 p-4 shadow-[0_8px_24px_-12px_rgba(30,64,175,0.15)] transition-all hover:shadow-[0_12px_32px_-12px_rgba(59,130,246,0.35)] hover:-translate-y-0.5 duration-250">
+      <div className={`inline-flex items-center justify-center rounded-full bg-gradient-to-br ${tint} text-white w-9 h-9 shadow-md`}>{icon}</div>
+      <div className="mt-3 text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="mt-0.5 text-xl font-bold tracking-tight text-slate-900">{value}</div>
+      <DiffBadge diff={delta} currency={currency} small />
+    </div>
+  );
+}
+
+function DiffBadge({ diff, currency, small }: { diff: number; currency: string; small?: boolean }) {
+  if (!diff) return <div className={`${small ? "text-[10px]" : "text-xs"} text-slate-400 mt-1`}>No change</div>;
+  const up = diff > 0;
+  return (
+    <div className={`${small ? "text-[10px]" : "text-xs"} mt-1 inline-flex items-center gap-1 font-medium ${up ? "text-red-500" : "text-emerald-500"}`}>
+      {up ? <TrendingUp size={small ? 10 : 12}/> : <TrendingDown size={small ? 10 : 12}/>}
+      {up ? "+" : "−"}{currency}{Math.abs(diff).toLocaleString()}
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between py-2.5">
+      <span className="text-sm text-slate-500">{label}</span>
+      <span className="text-sm font-semibold text-slate-900">{value}</span>
+    </div>
+  );
+}
+
+function AnalyticTile({ label, value, sub, highlight }: { label: string; value: string; sub?: string; highlight?: boolean }) {
+  return (
+    <div className={`rounded-2xl p-4 ${highlight ? "bg-gradient-to-br from-primary to-blue-500 text-white shadow-lg shadow-primary/30" : "bg-secondary/60"}`}>
+      <div className={`text-[10px] font-medium uppercase tracking-wide ${highlight ? "text-white/80" : "text-slate-500"}`}>{label}</div>
+      <div className={`mt-1 text-lg font-bold tracking-tight ${highlight ? "text-white" : "text-slate-900"}`}>{value}</div>
+      {sub && <div className={`text-[10px] mt-0.5 ${highlight ? "text-white/70" : "text-slate-400"}`}>{sub}</div>}
     </div>
   );
 }
