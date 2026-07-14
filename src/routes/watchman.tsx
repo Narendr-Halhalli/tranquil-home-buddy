@@ -3,7 +3,7 @@ import { Shield } from "lucide-react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { MonthRecord } from "@/lib/mps-store";
 import { SectionForm } from "@/components/mps/SectionForm";
-import { PageHeader } from "./water";
+import { PageHeader } from "@/components/mps/PageHeader";
 
 export const Route = createFileRoute("/watchman")({
   head: () => ({ meta: [{ title: "Watchman — MPS Tranquil" }] }),
