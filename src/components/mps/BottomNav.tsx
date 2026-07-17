@@ -1,11 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Droplets, Zap, Shield, Clock } from "lucide-react";
+import { Home, Droplets, Zap, Shield, Wrench, Clock } from "lucide-react";
 
 const items = [
   { to: "/", label: "Home", icon: Home },
   { to: "/water", label: "Water", icon: Droplets },
   { to: "/electricity", label: "Power", icon: Zap },
-  { to: "/watchman", label: "Watchman", icon: Shield },
+  { to: "/watchman", label: "Guard", icon: Shield },
+  { to: "/misc", label: "Misc", icon: Wrench },
   { to: "/history", label: "History", icon: Clock },
 ] as const;
 
