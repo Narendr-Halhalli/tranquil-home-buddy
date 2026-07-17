@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WaterRouteImport } from './routes/water'
 import { Route as WatchmanRouteImport } from './routes/watchman'
+import { Route as MiscRouteImport } from './routes/misc'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as ElectricityRouteImport } from './routes/electricity'
 import { Route as IndexRouteImport } from './routes/index'
@@ -23,6 +24,11 @@ const WaterRoute = WaterRouteImport.update({
 const WatchmanRoute = WatchmanRouteImport.update({
   id: '/watchman',
   path: '/watchman',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MiscRoute = MiscRouteImport.update({
+  id: '/misc',
+  path: '/misc',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryRoute = HistoryRouteImport.update({
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/electricity': typeof ElectricityRoute
   '/history': typeof HistoryRoute
+  '/misc': typeof MiscRoute
   '/watchman': typeof WatchmanRoute
   '/water': typeof WaterRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/electricity': typeof ElectricityRoute
   '/history': typeof HistoryRoute
+  '/misc': typeof MiscRoute
   '/watchman': typeof WatchmanRoute
   '/water': typeof WaterRoute
 }
@@ -60,21 +68,36 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/electricity': typeof ElectricityRoute
   '/history': typeof HistoryRoute
+  '/misc': typeof MiscRoute
   '/watchman': typeof WatchmanRoute
   '/water': typeof WaterRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/electricity' | '/history' | '/watchman' | '/water'
+  fullPaths:
+    | '/'
+    | '/electricity'
+    | '/history'
+    | '/misc'
+    | '/watchman'
+    | '/water'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/electricity' | '/history' | '/watchman' | '/water'
-  id: '__root__' | '/' | '/electricity' | '/history' | '/watchman' | '/water'
+  to: '/' | '/electricity' | '/history' | '/misc' | '/watchman' | '/water'
+  id:
+    | '__root__'
+    | '/'
+    | '/electricity'
+    | '/history'
+    | '/misc'
+    | '/watchman'
+    | '/water'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ElectricityRoute: typeof ElectricityRoute
   HistoryRoute: typeof HistoryRoute
+  MiscRoute: typeof MiscRoute
   WatchmanRoute: typeof WatchmanRoute
   WaterRoute: typeof WaterRoute
 }
@@ -93,6 +116,13 @@ declare module '@tanstack/react-router' {
       path: '/watchman'
       fullPath: '/watchman'
       preLoaderRoute: typeof WatchmanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/misc': {
+      id: '/misc'
+      path: '/misc'
+      fullPath: '/misc'
+      preLoaderRoute: typeof MiscRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/history': {
@@ -123,19 +153,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ElectricityRoute: ElectricityRoute,
   HistoryRoute: HistoryRoute,
+  MiscRoute: MiscRoute,
   WatchmanRoute: WatchmanRoute,
   WaterRoute: WaterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

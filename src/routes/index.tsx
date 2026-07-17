@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { Droplets, Zap, Shield, Wallet, TrendingUp, TrendingDown, Download, FileText } from "lucide-react";
+import { Droplets, Zap, Wrench, Wallet, TrendingUp, TrendingDown, Download, FileText } from "lucide-react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { MonthRecord, Settings } from "@/lib/mps-store";
 import {
@@ -8,9 +8,11 @@ import {
   currentMonthKey,
   formatMonthKey,
   MONTH_NAMES,
-  waterConsumption,
+  FLOORS,
+  totalFloorConsumption,
+  floorShares,
   electricityUnits,
-  watchmanTotal,
+  miscTotal,
   monthTotal,
   completeness,
   analytics,
@@ -39,10 +41,12 @@ function Dashboard() {
   const isCurrent = activeMonth === currentMonthKey();
 
   const c = settings.currency;
+  const shares = floorShares(rec?.water);
+  const totalWaterCons = totalFloorConsumption(rec?.water);
+  const waterBill = rec?.water?.bwssb ?? 0;
 
   return (
     <div className="mps-fade-in space-y-6 pb-32">
-      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs font-medium uppercase tracking-wider text-primary/80">{settings.apartmentName}</div>
@@ -56,13 +60,11 @@ function Dashboard() {
         <SettingsButton settings={settings} setSettings={setSettings} />
       </div>
 
-      {/* Month selector */}
       <MonthSelect value={activeMonth} onChange={setActiveMonth} />
 
-      {/* Hero card */}
       <div className="relative overflow-hidden rounded-[28px] bg-white/80 backdrop-blur-xl border border-white/70 shadow-[0_20px_60px_-20px_rgba(59,130,246,0.35)] p-6">
         <div className="flex items-center gap-6">
-          <ProgressRing value={pct} label="Expenses Entered" sublabel={`${Math.round(pct/33.4)}/3 modules`} />
+          <ProgressRing value={pct} label="Entries" sublabel={`${Math.round(pct/25)}/4 modules`} />
           <div className="flex-1 min-w-0">
             <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Monthly Total</div>
             <div className="mt-1 text-4xl font-bold tracking-tight text-slate-900">
@@ -73,53 +75,50 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Four cards */}
-      <div className="grid grid-cols-2 gap-3">
-        <StatCard
-          icon={<Droplets size={18}/>}
-          label="Water Bill"
-          value={`${c}${(rec?.water?.bwssb ?? 0).toLocaleString()}`}
-          delta={(rec?.water?.bwssb ?? 0) - (prev?.water?.bwssb ?? 0)}
-          currency={c}
-          tint="from-sky-400 to-blue-500"
-        />
-        <StatCard
-          icon={<Zap size={18}/>}
-          label="Electricity"
-          value={`${c}${(rec?.electricity?.bill ?? 0).toLocaleString()}`}
-          delta={(rec?.electricity?.bill ?? 0) - (prev?.electricity?.bill ?? 0)}
-          currency={c}
-          tint="from-amber-400 to-orange-500"
-        />
-        <StatCard
-          icon={<Shield size={18}/>}
-          label="Watchman"
-          value={`${c}${watchmanTotal(rec?.watchman).toLocaleString()}`}
-          delta={watchmanTotal(rec?.watchman) - watchmanTotal(prev?.watchman)}
-          currency={c}
-          tint="from-violet-400 to-indigo-500"
-        />
-        <StatCard
-          icon={<Wallet size={18}/>}
-          label="Total Expense"
-          value={`${c}${monthTotal(rec).toLocaleString()}`}
-          delta={a.diff}
-          currency={c}
-          tint="from-emerald-400 to-teal-500"
-        />
-      </div>
-
-      {/* Live details */}
-      <div className="rounded-[28px] bg-white/80 backdrop-blur-xl border border-white/70 shadow-sm p-5">
-        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">This Month</h3>
-        <div className="mt-3 divide-y divide-slate-100">
-          <Row label="Water Consumption" value={`${waterConsumption(rec?.water).total} units`} />
-          <Row label="Electricity Units" value={`${electricityUnits(rec?.electricity)} kWh`} />
-          <Row label="Watchman Extras" value={`${c}${((rec?.watchman?.bonus ?? 0) + (rec?.watchman?.extra ?? 0)).toLocaleString()}`} />
+      {/* Water summary with floor split */}
+      <div className="rounded-[28px] bg-white/85 backdrop-blur-xl border border-white/70 shadow-[0_10px_30px_-15px_rgba(30,64,175,0.25)] p-5">
+        <div className="flex items-center gap-3">
+          <div className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-blue-500 text-white w-9 h-9 shadow-md"><Droplets size={18}/></div>
+          <div className="flex-1">
+            <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Water</div>
+            <div className="text-lg font-bold text-slate-900">{c}{waterBill.toLocaleString()} <span className="text-slate-400 text-sm font-medium">· {totalWaterCons} units</span></div>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] uppercase tracking-wide text-slate-400">Cost</div>
+            <div className="text-sm font-bold text-primary">{c}{waterBill.toLocaleString()}</div>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {FLOORS.map(f => (
+            <div key={f.key} className="rounded-2xl bg-secondary/60 px-3 py-2.5">
+              <div className="text-[10px] font-medium uppercase tracking-wide text-slate-500">{f.label}</div>
+              <div className="mt-0.5 text-sm font-bold text-slate-900">{c}{shares[f.key].toLocaleString()}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Analytics */}
+      {/* Overview stat cards: Water, Electricity, Misc, Grand Total */}
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard icon={<Droplets size={18}/>} label="Water" value={`${c}${waterBill.toLocaleString()}`}
+          delta={waterBill - (prev?.water?.bwssb ?? 0)} currency={c} tint="from-sky-400 to-blue-500" />
+        <StatCard icon={<Zap size={18}/>} label="Electricity" value={`${c}${(rec?.electricity?.bill ?? 0).toLocaleString()}`}
+          delta={(rec?.electricity?.bill ?? 0) - (prev?.electricity?.bill ?? 0)} currency={c} tint="from-amber-400 to-orange-500" />
+        <StatCard icon={<Wrench size={18}/>} label="Miscellaneous" value={`${c}${miscTotal(rec).toLocaleString()}`}
+          delta={miscTotal(rec) - miscTotal(prev)} currency={c} tint="from-violet-400 to-indigo-500" />
+        <StatCard icon={<Wallet size={18}/>} label="Grand Total" value={`${c}${monthTotal(rec).toLocaleString()}`}
+          delta={a.diff} currency={c} tint="from-emerald-400 to-teal-500" />
+      </div>
+
+      <div className="rounded-[28px] bg-white/80 backdrop-blur-xl border border-white/70 shadow-sm p-5">
+        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">This Month</h3>
+        <div className="mt-3 divide-y divide-slate-100">
+          <Row label="Total Water Consumption" value={`${totalWaterCons} units`} />
+          <Row label="Electricity Units" value={`${electricityUnits(rec?.electricity)} kWh`} />
+          <Row label="Miscellaneous" value={`${c}${miscTotal(rec).toLocaleString()}`} />
+        </div>
+      </div>
+
       <div className="rounded-[28px] bg-white/80 backdrop-blur-xl border border-white/70 shadow-sm p-5">
         <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Analytics</h3>
         <div className="mt-3 grid grid-cols-2 gap-3">
@@ -133,7 +132,6 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Exports */}
       <div className="flex gap-3">
         <button onClick={() => exportCSV(records, settings)} className="flex-1 flex items-center justify-center gap-2 rounded-full bg-white/80 backdrop-blur-xl border border-white/70 py-3.5 font-medium text-slate-700 hover:bg-white transition-all shadow-sm">
           <Download size={16}/> Export CSV
