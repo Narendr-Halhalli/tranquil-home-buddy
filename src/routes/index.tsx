@@ -12,6 +12,7 @@ import {
   totalFloorConsumption,
   floorShares,
   electricityUnits,
+  electricityAmount,
   miscTotal,
   monthTotal,
   completeness,
@@ -102,8 +103,8 @@ function Dashboard() {
       <div className="grid grid-cols-2 gap-3">
         <StatCard icon={<Droplets size={18}/>} label="Water" value={`${c}${waterBill.toLocaleString()}`}
           delta={waterBill - (prev?.water?.bwssb ?? 0)} currency={c} tint="from-sky-400 to-blue-500" />
-        <StatCard icon={<Zap size={18}/>} label="Electricity" value={`${c}${(rec?.electricity?.bill ?? 0).toLocaleString()}`}
-          delta={(rec?.electricity?.bill ?? 0) - (prev?.electricity?.bill ?? 0)} currency={c} tint="from-amber-400 to-orange-500" />
+        <StatCard icon={<Zap size={18}/>} label="Electricity" value={`${c}${electricityAmount(rec?.electricity).toLocaleString()}`}
+          delta={electricityAmount(rec?.electricity) - electricityAmount(prev?.electricity)} currency={c} tint="from-amber-400 to-orange-500" />
         <StatCard icon={<Wrench size={18}/>} label="Miscellaneous" value={`${c}${miscTotal(rec).toLocaleString()}`}
           delta={miscTotal(rec) - miscTotal(prev)} currency={c} tint="from-violet-400 to-indigo-500" />
         <StatCard icon={<Wallet size={18}/>} label="Grand Total" value={`${c}${monthTotal(rec).toLocaleString()}`}

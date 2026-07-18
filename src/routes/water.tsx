@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Droplets } from "lucide-react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { MonthRecord } from "@/lib/mps-store";
-import { SectionForm } from "@/components/mps/SectionForm";
+import { WaterForm } from "@/components/mps/WaterForm";
 import { PageHeader } from "@/components/mps/PageHeader";
 
 export const Route = createFileRoute("/water")({
@@ -14,9 +14,8 @@ function WaterPage() {
   const [records, setRecords] = useLocalStorage<MonthRecord[]>("mps.records", []);
   return (
     <div className="mps-fade-in space-y-5 pb-8">
-      <PageHeader icon={<Droplets size={22}/>} title="Water" subtitle="Kaveri, Borewell & BWSSB"/>
-      <SectionForm section="water" records={records} setRecords={setRecords as any} />
+      <PageHeader icon={<Droplets size={22} />} title="Water" subtitle="Borewell, Kaveri & BWSSB" />
+      <WaterForm records={records} setRecords={setRecords as any} />
     </div>
   );
 }
-
