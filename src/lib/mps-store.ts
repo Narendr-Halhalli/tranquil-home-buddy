@@ -7,7 +7,15 @@ export const FLOORS: { key: FloorKey; label: string }[] = [
   { key: "third", label: "Third Floor" },
 ];
 
-export type FloorReading = { kaveriIn: number; kaveriOut: number };
+export type FloorReading = {
+  borewellStart: number;
+  borewellEnd: number;
+  kaveriStart: number;
+  kaveriEnd: number;
+  // legacy fields, preserved for backward compat
+  kaveriIn?: number;
+  kaveriOut?: number;
+};
 
 export type CommonReadings = {
   basement: number;
@@ -19,7 +27,8 @@ export type WaterData = {
   floors: Record<FloorKey, FloorReading>;
   common: CommonReadings;
   bwssb: number;
-  // legacy fields, kept for backward compatibility
+  totalLitresReceived?: number;
+  // legacy
   kaveriIn?: number;
   kaveriOut?: number;
   borewellIn?: number;
@@ -27,10 +36,17 @@ export type WaterData = {
 };
 
 export type ElectricityData = {
-  prev: number;
-  curr: number;
-  bill: number;
+  accountNumber?: string;
   billingPeriod?: string;
+  units: number;
+  amount: number;
+  paidBy?: string;
+  paidOn?: string;
+  floors: number;
+  // legacy
+  prev?: number;
+  curr?: number;
+  bill?: number;
 };
 
 export type WatchmanData = {
@@ -49,14 +65,14 @@ export const MISC_CATEGORIES: MiscCategory[] = [
 
 export type MiscExpense = {
   id: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   category: MiscCategory;
   description: string;
   amount: number;
 };
 
 export type MonthRecord = {
-  month: string; // "YYYY-MM"
+  month: string;
   water?: WaterData;
   electricity?: ElectricityData;
   watchman?: WatchmanData;
@@ -95,12 +111,21 @@ export function prevMonthKey(key: string) {
   return currentMonthKey(d);
 }
 
+/** Default floors: 3 before June 2024, 4 from June 2024 onwards. */
+export function defaultFloorsForMonth(monthKey: string): number {
+  return monthKey >= "2024-06" ? 4 : 3;
+}
+
+export function emptyFloorReading(): FloorReading {
+  return { borewellStart: 0, borewellEnd: 0, kaveriStart: 0, kaveriEnd: 0 };
+}
+
 export function emptyFloors(): Record<FloorKey, FloorReading> {
   return {
-    ground: { kaveriIn: 0, kaveriOut: 0 },
-    first: { kaveriIn: 0, kaveriOut: 0 },
-    second: { kaveriIn: 0, kaveriOut: 0 },
-    third: { kaveriIn: 0, kaveriOut: 0 },
+    ground: emptyFloorReading(),
+    first: emptyFloorReading(),
+    second: emptyFloorReading(),
+    third: emptyFloorReading(),
   };
 }
 
@@ -109,34 +134,71 @@ export function emptyCommon(): CommonReadings {
 }
 
 export function defaultWater(): WaterData {
-  return { floors: emptyFloors(), common: emptyCommon(), bwssb: 0 };
+  return { floors: emptyFloors(), common: emptyCommon(), bwssb: 0, totalLitresReceived: 0 };
 }
 
-/** Normalize legacy or partial water data into the new floor-aware shape. */
+function normalizeFloor(f: any): FloorReading {
+  if (!f) return emptyFloorReading();
+  // Legacy: kaveriIn (larger) - kaveriOut (smaller) = consumption
+  // Map to kaveriEnd/kaveriStart to preserve consumption.
+  const kaveriStart = f.kaveriStart ?? f.kaveriOut ?? 0;
+  const kaveriEnd = f.kaveriEnd ?? f.kaveriIn ?? 0;
+  return {
+    borewellStart: f.borewellStart || 0,
+    borewellEnd: f.borewellEnd || 0,
+    kaveriStart: kaveriStart || 0,
+    kaveriEnd: kaveriEnd || 0,
+  };
+}
+
 export function normalizeWater(w?: WaterData): WaterData {
   if (!w) return defaultWater();
-  const floors = w.floors
-    ? {
-        ground: { kaveriIn: w.floors.ground?.kaveriIn || 0, kaveriOut: w.floors.ground?.kaveriOut || 0 },
-        first: { kaveriIn: w.floors.first?.kaveriIn || 0, kaveriOut: w.floors.first?.kaveriOut || 0 },
-        second: { kaveriIn: w.floors.second?.kaveriIn || 0, kaveriOut: w.floors.second?.kaveriOut || 0 },
-        third: { kaveriIn: w.floors.third?.kaveriIn || 0, kaveriOut: w.floors.third?.kaveriOut || 0 },
-      }
-    : emptyFloors();
-  const common = w.common
-    ? {
-        basement: w.common.basement || 0,
-        terrace: w.common.terrace || 0,
-        parkBorewell: w.common.parkBorewell || 0,
-      }
-    : emptyCommon();
-  return { floors, common, bwssb: w.bwssb || 0 };
+  return {
+    floors: {
+      ground: normalizeFloor((w.floors as any)?.ground),
+      first: normalizeFloor((w.floors as any)?.first),
+      second: normalizeFloor((w.floors as any)?.second),
+      third: normalizeFloor((w.floors as any)?.third),
+    },
+    common: {
+      basement: w.common?.basement || 0,
+      terrace: w.common?.terrace || 0,
+      parkBorewell: w.common?.parkBorewell || 0,
+    },
+    bwssb: w.bwssb || 0,
+    totalLitresReceived: w.totalLitresReceived || 0,
+  };
 }
 
-// --- calculations ---
-export function floorConsumption(f?: FloorReading) {
+export function normalizeElectricity(e?: ElectricityData, monthKey?: string): ElectricityData {
+  const defFloors = monthKey ? defaultFloorsForMonth(monthKey) : 4;
+  if (!e) return { units: 0, amount: 0, floors: defFloors };
+  const units = e.units ?? Math.max(0, (e.curr || 0) - (e.prev || 0));
+  const amount = e.amount ?? e.bill ?? 0;
+  return {
+    accountNumber: e.accountNumber || "",
+    billingPeriod: e.billingPeriod || "",
+    units: units || 0,
+    amount: amount || 0,
+    paidBy: e.paidBy || "",
+    paidOn: e.paidOn || "",
+    floors: e.floors || defFloors,
+  };
+}
+
+// --- water calculations ---
+export function borewellConsumption(f?: FloorReading) {
   if (!f) return 0;
-  return Math.max(0, (f.kaveriIn || 0) - (f.kaveriOut || 0));
+  return Math.max(0, (f.borewellEnd || 0) - (f.borewellStart || 0));
+}
+export function kaveriConsumption(f?: FloorReading) {
+  if (!f) return 0;
+  const start = f.kaveriStart ?? f.kaveriOut ?? 0;
+  const end = f.kaveriEnd ?? f.kaveriIn ?? 0;
+  return Math.max(0, end - start);
+}
+export function floorConsumption(f?: FloorReading) {
+  return borewellConsumption(f) + kaveriConsumption(f);
 }
 
 export function floorConsumptions(w?: WaterData): Record<FloorKey, number> {
@@ -167,9 +229,7 @@ export function floorShares(w?: WaterData): Record<FloorKey, number> {
   const cons = floorConsumptions(w);
   const total = cons.ground + cons.first + cons.second + cons.third;
   const bill = w?.bwssb || 0;
-  if (total <= 0 || bill <= 0) {
-    return { ground: 0, first: 0, second: 0, third: 0 };
-  }
+  if (total <= 0 || bill <= 0) return { ground: 0, first: 0, second: 0, third: 0 };
   return {
     ground: Math.round((cons.ground / total) * bill),
     first: Math.round((cons.first / total) * bill),
@@ -178,21 +238,38 @@ export function floorShares(w?: WaterData): Record<FloorKey, number> {
   };
 }
 
-// Legacy helper for older code paths.
+export function costPerLitre(w?: WaterData) {
+  const n = normalizeWater(w);
+  const litres = n.totalLitresReceived || 0;
+  if (litres <= 0 || (n.bwssb || 0) <= 0) return 0;
+  return n.bwssb / litres;
+}
+
 export function waterConsumption(w?: WaterData) {
   const total = totalFloorConsumption(w);
   return { kaveri: total, borewell: 0, total };
 }
 
+// --- electricity ---
 export function electricityUnits(e?: ElectricityData) {
   if (!e) return 0;
+  if (typeof e.units === "number" && e.units > 0) return e.units;
   return Math.max(0, (e.curr || 0) - (e.prev || 0));
 }
-
+export function electricityAmount(e?: ElectricityData) {
+  if (!e) return 0;
+  return e.amount ?? e.bill ?? 0;
+}
 export function electricityAvgCost(e?: ElectricityData) {
   const u = electricityUnits(e);
-  if (!e || u <= 0) return 0;
-  return (e.bill || 0) / u;
+  if (u <= 0) return 0;
+  return electricityAmount(e) / u;
+}
+export function electricitySharePerFloor(e?: ElectricityData) {
+  if (!e) return 0;
+  const floors = e.floors || 4;
+  if (floors <= 0) return 0;
+  return electricityAmount(e) / floors;
 }
 
 export function watchmanTotal(w?: WatchmanData) {
@@ -209,7 +286,7 @@ export function monthTotal(r?: MonthRecord) {
   if (!r) return 0;
   return (
     (r.water?.bwssb || 0) +
-    (r.electricity?.bill || 0) +
+    electricityAmount(r.electricity) +
     watchmanTotal(r.watchman) +
     miscTotal(r)
   );
@@ -242,4 +319,19 @@ export function analytics(records: MonthRecord[], activeKey: string) {
   const yearTotal = totals.filter(t => t.month.startsWith(year)).reduce((s, t) => s + t.total, 0);
 
   return { currentTotal, prevTotal, diff, avg, highest, lowest, yearTotal };
+}
+
+export function electricityStats(records: MonthRecord[]) {
+  const list = records.filter(r => r.electricity && electricityAmount(r.electricity) > 0);
+  if (list.length === 0) return { avgBill: 0, avgUnits: 0, avgShare: 0, accountNumber: "" };
+  const totalBill = list.reduce((s, r) => s + electricityAmount(r.electricity), 0);
+  const totalUnits = list.reduce((s, r) => s + electricityUnits(r.electricity), 0);
+  const totalShare = list.reduce((s, r) => s + electricitySharePerFloor(r.electricity), 0);
+  const accountNumber = list.map(r => r.electricity?.accountNumber).find(Boolean) || "";
+  return {
+    avgBill: totalBill / list.length,
+    avgUnits: totalUnits / list.length,
+    avgShare: totalShare / list.length,
+    accountNumber,
+  };
 }
