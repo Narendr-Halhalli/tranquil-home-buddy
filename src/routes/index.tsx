@@ -12,6 +12,7 @@ import {
   totalFloorConsumption,
   floorShares,
   electricityUnits,
+  electricityAmount,
   miscTotal,
   monthTotal,
   completeness,
