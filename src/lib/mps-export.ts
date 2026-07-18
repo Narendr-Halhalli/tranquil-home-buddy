@@ -5,7 +5,9 @@ import {
   totalFloorConsumption,
   floorShares,
   electricityUnits,
+  electricityAmount,
   electricityAvgCost,
+  electricitySharePerFloor,
   miscTotal,
   watchmanTotal,
   monthTotal,
@@ -20,7 +22,7 @@ export function exportCSV(records: MonthRecord[], settings: Settings) {
       "Ground Consumption","First Consumption","Second Consumption","Third Consumption","Total Consumption",
       "Basement","Terrace","Park Borewell","Common Total","Water Loss",
       "BWSSB Amount","Ground Share","First Share","Second Share","Third Share",
-      "Elec Prev","Elec Curr","Units","Elec Bill","Avg Cost/Unit","Billing Period",
+      "Elec Units","Elec Amount","Elec Floors","Share/Floor","Avg Cost/Unit","Billing Period","Paid By","Paid On",
       "Watchman Total","Miscellaneous","Grand Total",
     ],
   ];
@@ -29,14 +31,16 @@ export function exportCSV(records: MonthRecord[], settings: Settings) {
     const cons = floorConsumptions(r.water);
     const shares = floorShares(r.water);
     const eu = electricityUnits(r.electricity);
+    const ea = electricityAmount(r.electricity);
     rows.push([
       formatMonthKey(r.month),
       cons.ground, cons.first, cons.second, cons.third, totalFloorConsumption(r.water),
       r.water?.common?.basement ?? 0, r.water?.common?.terrace ?? 0, r.water?.common?.parkBorewell ?? 0,
       commonReadingTotal(r.water), waterLoss(r.water),
       r.water?.bwssb ?? 0, shares.ground, shares.first, shares.second, shares.third,
-      r.electricity?.prev ?? "", r.electricity?.curr ?? "", eu, r.electricity?.bill ?? 0,
+      eu, ea, r.electricity?.floors ?? "", Math.round(electricitySharePerFloor(r.electricity)),
       Math.round(electricityAvgCost(r.electricity) * 100) / 100, r.electricity?.billingPeriod ?? "",
+      r.electricity?.paidBy ?? "", r.electricity?.paidOn ?? "",
       watchmanTotal(r.watchman), miscTotal(r), monthTotal(r),
     ].map(v => String(v)));
   }
@@ -70,7 +74,9 @@ export function exportPDF(records: MonthRecord[], settings: Settings) {
     const shares = floorShares(r.water);
     const totalCons = totalFloorConsumption(r.water);
     const eu = electricityUnits(r.electricity);
+    const ea = electricityAmount(r.electricity);
     const avg = Math.round(electricityAvgCost(r.electricity) * 100) / 100;
+    const sharePerFloor = Math.round(electricitySharePerFloor(r.electricity));
     return `<div class="card"><h2>${formatMonthKey(r.month)}</h2>
       <h3>Water — Floor Consumption</h3>
       <div class="grid">
@@ -91,10 +97,15 @@ export function exportPDF(records: MonthRecord[], settings: Settings) {
         <div class="row"><span>Third</span><span>${c}${shares.third.toLocaleString()}</span></div>
       </div>
       <h3>Electricity</h3>
+      ${r.electricity?.accountNumber ? `<div class="row"><span>Account</span><span>${r.electricity.accountNumber}</span></div>` : ""}
       <div class="row"><span>Units</span><span>${eu} kWh</span></div>
-      <div class="row"><span>Bill</span><span>${c}${(r.electricity?.bill ?? 0).toLocaleString()}</span></div>
+      <div class="row"><span>Amount</span><span>${c}${ea.toLocaleString()}</span></div>
+      <div class="row"><span>Floors</span><span>${r.electricity?.floors ?? "—"}</span></div>
+      <div class="row"><span>Share / Floor</span><span>${c}${sharePerFloor.toLocaleString()}</span></div>
       <div class="row"><span>Avg Cost / Unit</span><span>${c}${avg}</span></div>
       ${r.electricity?.billingPeriod ? `<div class="row"><span>Billing Period</span><span>${r.electricity.billingPeriod}</span></div>` : ""}
+      ${r.electricity?.paidBy ? `<div class="row"><span>Paid By</span><span>${r.electricity.paidBy}</span></div>` : ""}
+      ${r.electricity?.paidOn ? `<div class="row"><span>Paid On</span><span>${r.electricity.paidOn}</span></div>` : ""}
       <h3>Watchman &amp; Miscellaneous</h3>
       <div class="row"><span>Watchman Total</span><span>${c}${watchmanTotal(r.watchman).toLocaleString()}</span></div>
       <div class="row"><span>Miscellaneous</span><span>${c}${miscTotal(r).toLocaleString()}</span></div>
