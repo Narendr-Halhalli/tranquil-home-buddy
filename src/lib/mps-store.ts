@@ -135,7 +135,7 @@ export function emptyFloors(): Record<FloorKey, FloorReading> {
 }
 
 export function emptyCommon(): CommonReadings {
-  return { basement: 0, terrace: 0, parkBorewell: 0 };
+  return { basementTerrace: 0, basementParking: 0 };
 }
 
 export function defaultWater(): WaterData {
@@ -166,9 +166,8 @@ export function normalizeWater(w?: WaterData): WaterData {
       third: normalizeFloor((w.floors as any)?.third),
     },
     common: {
-      basement: w.common?.basement || 0,
-      terrace: w.common?.terrace || 0,
-      parkBorewell: w.common?.parkBorewell || 0,
+      basementTerrace: w.common?.basementTerrace ?? w.common?.terrace ?? w.common?.basement ?? 0,
+      basementParking: w.common?.basementParking ?? w.common?.parkBorewell ?? 0,
     },
     bwssb: w.bwssb || 0,
     totalLitresReceived: w.totalLitresReceived || 0,
@@ -223,7 +222,7 @@ export function totalFloorConsumption(w?: WaterData) {
 
 export function commonReadingTotal(w?: WaterData) {
   const n = normalizeWater(w);
-  return (n.common.basement || 0) + (n.common.terrace || 0) + (n.common.parkBorewell || 0);
+  return (n.common.basementTerrace || 0) + (n.common.basementParking || 0);
 }
 
 export function waterLoss(w?: WaterData) {
@@ -295,6 +294,12 @@ export function monthTotal(r?: MonthRecord) {
     watchmanTotal(r.watchman) +
     miscTotal(r)
   );
+}
+
+/** Final contribution per flat = total monthly expense / number of flats (default 4). */
+export function perFlatShare(r?: MonthRecord, flats = 4) {
+  const n = flats > 0 ? flats : 4;
+  return monthTotal(r) / n;
 }
 
 export function completeness(r?: MonthRecord) {

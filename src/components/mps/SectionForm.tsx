@@ -93,7 +93,7 @@ export function SectionForm({
   const update = (k: string, v: number | string) => setForm((f: any) => ({ ...f, [k]: v }));
   const updateFloor = (fk: FloorKey, k: "kaveriIn" | "kaveriOut", v: number) =>
     setForm((f: any) => ({ ...f, floors: { ...f.floors, [fk]: { ...f.floors[fk], [k]: v } } }));
-  const updateCommon = (k: "basement" | "terrace" | "parkBorewell", v: number) =>
+  const updateCommon = (k: "basementTerrace" | "basementParking", v: number) =>
     setForm((f: any) => ({ ...f, common: { ...f.common, [k]: v } }));
 
   const validate = (): string | null => {
@@ -169,11 +169,8 @@ export function SectionForm({
           <Card>
             <h3 className="text-base font-bold tracking-tight text-slate-900 mb-3">Common Readings</h3>
             <div className="grid grid-cols-2 gap-4">
-              <NumberField label="Basement Meter" value={form.common.basement} onChange={v => updateCommon("basement", v)} />
-              <NumberField label="Terrace Meter" value={form.common.terrace} onChange={v => updateCommon("terrace", v)} />
-              <div className="col-span-2">
-                <NumberField label="Park Borewell Meter" value={form.common.parkBorewell} onChange={v => updateCommon("parkBorewell", v)} />
-              </div>
+              <NumberField label="Basement Meter at Terrace" value={form.common.basementTerrace} onChange={v => updateCommon("basementTerrace", v)} />
+              <NumberField label="Basement Meter at Parking" value={form.common.basementParking} onChange={v => updateCommon("basementParking", v)} />
             </div>
           </Card>
 
