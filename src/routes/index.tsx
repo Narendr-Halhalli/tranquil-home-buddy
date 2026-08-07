@@ -14,7 +14,9 @@ import {
   electricityUnits,
   electricityAmount,
   miscTotal,
+  watchmanTotal,
   monthTotal,
+  perFlatShare,
   completeness,
   analytics,
   prevMonthKey,
@@ -45,6 +47,8 @@ function Dashboard() {
   const shares = floorShares(rec?.water);
   const totalWaterCons = totalFloorConsumption(rec?.water);
   const waterBill = rec?.water?.bwssb ?? 0;
+  const flats = settings.flats > 0 ? settings.flats : 4;
+  const perFlat = perFlatShare(rec, flats);
 
   return (
     <div className="mps-fade-in space-y-6 pb-32">
@@ -72,6 +76,27 @@ function Dashboard() {
               {c}{monthTotal(rec).toLocaleString()}
             </div>
             <DiffBadge diff={a.diff} currency={c} />
+          </div>
+        </div>
+      </div>
+
+      {/* Final contribution per flat */}
+      <div className="rounded-[28px] bg-gradient-to-br from-primary to-blue-500 text-white shadow-[0_20px_60px_-20px_rgba(59,130,246,0.55)] p-6">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-white/80">Final Contribution Per Flat</div>
+        <div className="mt-1 text-4xl font-bold tracking-tight tabular-nums">
+          {c}{Math.round(perFlat).toLocaleString()}
+        </div>
+        <div className="mt-2 text-[11px] font-medium text-white/80">
+          Total expense {c}{monthTotal(rec).toLocaleString()} ÷ {flats} flats
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl bg-white/15 px-3 py-2.5">
+            <div className="text-[10px] uppercase tracking-wide text-white/70">Water + Electricity</div>
+            <div className="mt-0.5 text-sm font-bold">{c}{(waterBill + electricityAmount(rec?.electricity)).toLocaleString()}</div>
+          </div>
+          <div className="rounded-2xl bg-white/15 px-3 py-2.5">
+            <div className="text-[10px] uppercase tracking-wide text-white/70">Watchman + Misc</div>
+            <div className="mt-0.5 text-sm font-bold">{c}{(watchmanTotal(rec?.watchman) + miscTotal(rec)).toLocaleString()}</div>
           </div>
         </div>
       </div>

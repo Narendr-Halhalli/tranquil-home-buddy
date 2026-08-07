@@ -20,7 +20,7 @@ export function exportCSV(records: MonthRecord[], settings: Settings) {
     [
       "Month",
       "Ground Consumption","First Consumption","Second Consumption","Third Consumption","Total Consumption",
-      "Basement","Terrace","Park Borewell","Common Total","Water Loss",
+      "Basement @ Terrace","Basement @ Parking","Common Total","Water Loss",
       "BWSSB Amount","Ground Share","First Share","Second Share","Third Share",
       "Elec Units","Elec Amount","Elec Floors","Share/Floor","Avg Cost/Unit","Billing Period","Paid By","Paid On",
       "Watchman Total","Miscellaneous","Grand Total",
@@ -35,7 +35,7 @@ export function exportCSV(records: MonthRecord[], settings: Settings) {
     rows.push([
       formatMonthKey(r.month),
       cons.ground, cons.first, cons.second, cons.third, totalFloorConsumption(r.water),
-      r.water?.common?.basement ?? 0, r.water?.common?.terrace ?? 0, r.water?.common?.parkBorewell ?? 0,
+      r.water?.common?.basementTerrace ?? 0, r.water?.common?.basementParking ?? 0,
       commonReadingTotal(r.water), waterLoss(r.water),
       r.water?.bwssb ?? 0, shares.ground, shares.first, shares.second, shares.third,
       eu, ea, r.electricity?.floors ?? "", Math.round(electricitySharePerFloor(r.electricity)),
@@ -86,7 +86,7 @@ export function exportPDF(records: MonthRecord[], settings: Settings) {
         <div class="row"><span>Third</span><span>${cons.third} u</span></div>
       </div>
       <div class="row"><span>Total Consumption</span><span>${totalCons} u</span></div>
-      <div class="row"><span>Common Meters (B/T/PB)</span><span>${r.water?.common?.basement ?? 0} / ${r.water?.common?.terrace ?? 0} / ${r.water?.common?.parkBorewell ?? 0}</span></div>
+      <div class="row"><span>Basement Meter (Terrace / Parking)</span><span>${r.water?.common?.basementTerrace ?? 0} / ${r.water?.common?.basementParking ?? 0}</span></div>
       <div class="row"><span>Water Loss / Common Usage</span><span>${waterLoss(r.water)} u</span></div>
       <div class="row"><span>BWSSB Bill</span><span>${c}${(r.water?.bwssb ?? 0).toLocaleString()}</span></div>
       <h3>Floor Share</h3>

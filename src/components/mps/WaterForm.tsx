@@ -40,7 +40,7 @@ export function WaterForm({
 
   const updateFloor = (fk: FloorKey, k: keyof FloorReading, v: number) =>
     setForm(f => ({ ...f, floors: { ...f.floors, [fk]: { ...f.floors[fk], [k]: v } } }));
-  const updateCommon = (k: keyof WaterData["common"], v: number) =>
+  const updateCommon = (k: "basementTerrace" | "basementParking", v: number) =>
     setForm(f => ({ ...f, common: { ...f.common, [k]: v } }));
   const updateTop = <K extends keyof WaterData>(k: K, v: WaterData[K]) =>
     setForm(f => ({ ...f, [k]: v }));
@@ -152,7 +152,7 @@ export function WaterForm({
         <button onClick={() => setOpenCommon(!openCommon)} className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50/60 transition-colors">
           <div>
             <div className="text-base font-bold tracking-tight text-slate-900">Common Readings</div>
-            <div className="text-[11px] font-medium text-slate-500 mt-0.5">Basement · Terrace · Park Borewell</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-0.5">Basement meter at terrace · at parking</div>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-primary bg-primary/10 rounded-full px-3 py-1">{commonTotal} u</span>
@@ -162,11 +162,8 @@ export function WaterForm({
         {openCommon && (
           <div className="px-5 pb-5 mps-fade-in space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <NumberField label="Basement Meter" value={form.common.basement} onChange={v => updateCommon("basement", v)} />
-              <NumberField label="Terrace Meter" value={form.common.terrace} onChange={v => updateCommon("terrace", v)} />
-              <div className="col-span-2">
-                <NumberField label="Park Borewell Meter" value={form.common.parkBorewell} onChange={v => updateCommon("parkBorewell", v)} />
-              </div>
+              <NumberField label="Basement Meter at Terrace" value={form.common.basementTerrace} onChange={v => updateCommon("basementTerrace", v)} />
+              <NumberField label="Basement Meter at Parking" value={form.common.basementParking} onChange={v => updateCommon("basementParking", v)} />
             </div>
             <div className="grid grid-cols-3 gap-2">
               <Metric label="Common" value={commonTotal} />

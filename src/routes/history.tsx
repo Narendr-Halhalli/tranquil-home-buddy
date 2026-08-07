@@ -138,9 +138,8 @@ function HistoryPage() {
                   <div>
                     <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-2">Common Meters</div>
                     <div className="grid grid-cols-3 gap-2">
-                      <MiniPill label="Basement" value={`${water.common.basement}`} />
-                      <MiniPill label="Terrace" value={`${water.common.terrace}`} />
-                      <MiniPill label="Park BW" value={`${water.common.parkBorewell}`} />
+                      <MiniPill label="Basement @ Terrace" value={`${water.common.basementTerrace ?? 0}`} />
+                      <MiniPill label="Basement @ Parking" value={`${water.common.basementParking ?? 0}`} />
                     </div>
                     <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
                       <span>Common total</span><span className="font-semibold text-slate-800">{commonReadingTotal(water)} units</span>
