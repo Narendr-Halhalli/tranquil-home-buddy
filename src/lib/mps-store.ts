@@ -18,9 +18,14 @@ export type FloorReading = {
 };
 
 export type CommonReadings = {
-  basement: number;
-  terrace: number;
-  parkBorewell: number;
+  /** Basement meter located at the terrace */
+  basementTerrace: number;
+  /** Basement meter located at the parking */
+  basementParking: number;
+  // legacy fields, preserved for backward compat
+  basement?: number;
+  terrace?: number;
+  parkBorewell?: number;
 };
 
 export type WaterData = {
@@ -88,7 +93,7 @@ export type Settings = {
 export const DEFAULT_SETTINGS: Settings = {
   apartmentName: "MPS Tranquil",
   currency: "₹",
-  flats: 12,
+  flats: 4,
 };
 
 export const MONTH_NAMES = [
