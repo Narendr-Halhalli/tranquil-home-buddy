@@ -20,7 +20,7 @@ export function exportCSV(records: MonthRecord[], settings: Settings) {
     [
       "Month",
       "Ground Consumption","First Consumption","Second Consumption","Third Consumption","Total Consumption",
-      "Basement","Terrace","Park Borewell","Common Total","Water Loss",
+      "Basement @ Terrace","Basement @ Parking","Common Total","Water Loss",
       "BWSSB Amount","Ground Share","First Share","Second Share","Third Share",
       "Elec Units","Elec Amount","Elec Floors","Share/Floor","Avg Cost/Unit","Billing Period","Paid By","Paid On",
       "Watchman Total","Miscellaneous","Grand Total",
