@@ -87,8 +87,8 @@ export function WaterForm({
 
   return (
     <div className="space-y-5 pb-32">
-      {/* Section 1: Monthly Summary (sticky) */}
-      <div className="sticky top-2 z-30">
+      {/* Section 1: Monthly Summary */}
+      <div>
         <div className="rounded-[28px] bg-white/90 backdrop-blur-xl border border-white/70 shadow-[0_20px_60px_-20px_rgba(59,130,246,0.35)] p-4">
           <div className="flex items-center gap-2 mb-3">
             <MonthPicker value={month} onChange={setMonth} />
