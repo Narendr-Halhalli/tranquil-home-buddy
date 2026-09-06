@@ -52,7 +52,7 @@ export function ElectricityForm({
     [records]
   );
 
-  const startNew = () => { setDraft(emptyDraft()); setOpen(true); };
+  const startNew = () => { setDraft(emptyDraft(activeMonth)); setOpen(true); };
   const startEdit = (month: string) => {
     const rec = records.find(r => r.month === month);
     if (!rec?.electricity) return;
