@@ -12,7 +12,6 @@ import {
   kaveriConsumption,
   floorConsumption,
   totalFloorConsumption,
-  commonReadingTotal,
   waterLoss,
   costPerLitre,
 } from "@/lib/mps-store";
@@ -28,7 +27,6 @@ export function WaterForm({
   const existing = records.find(r => r.month === month);
   const [confirmDel, setConfirmDel] = useState(false);
   const [openFloor, setOpenFloor] = useState<FloorKey | null>("ground");
-  const [openCommon, setOpenCommon] = useState(true);
 
   const [form, setForm] = useState<WaterData>(() => normalizeWater(existing?.water));
   const key = month + (existing ? "1" : "0");
@@ -40,13 +38,10 @@ export function WaterForm({
 
   const updateFloor = (fk: FloorKey, k: keyof FloorReading, v: number) =>
     setForm(f => ({ ...f, floors: { ...f.floors, [fk]: { ...f.floors[fk], [k]: v } } }));
-  const updateCommon = (k: "basementTerrace" | "basementParking", v: number) =>
-    setForm(f => ({ ...f, common: { ...f.common, [k]: v } }));
   const updateTop = <K extends keyof WaterData>(k: K, v: WaterData[K]) =>
     setForm(f => ({ ...f, [k]: v }));
 
   const totalCons = useMemo(() => totalFloorConsumption(form), [form]);
-  const commonTotal = useMemo(() => commonReadingTotal(form), [form]);
   const loss = useMemo(() => waterLoss(form), [form]);
   const cpl = useMemo(() => costPerLitre(form), [form]);
 
@@ -98,7 +93,6 @@ export function WaterForm({
             <Metric label="BWSSB Bill" value={form.bwssb || 0} unit="₹" />
             <Metric label="₹ / Litre" value={Math.round(cpl * 100) / 100} />
             <Metric label="Block Total" value={totalCons} highlight />
-            <Metric label="Common" value={commonTotal} />
             <Metric label="Loss" value={loss} />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3">
@@ -145,33 +139,6 @@ export function WaterForm({
             </div>
           );
         })}
-      </div>
-
-      {/* Section 3: Common Readings */}
-      <div className="rounded-[24px] bg-white/85 backdrop-blur-xl border border-white/70 shadow-[0_8px_30px_-12px_rgba(59,130,246,0.15)] overflow-hidden">
-        <button onClick={() => setOpenCommon(!openCommon)} className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50/60 transition-colors">
-          <div>
-            <div className="text-base font-bold tracking-tight text-slate-900">Common Readings</div>
-            <div className="text-[11px] font-medium text-slate-500 mt-0.5">Basement meter at terrace · at parking</div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-primary bg-primary/10 rounded-full px-3 py-1">{commonTotal} u</span>
-            <ChevronDown size={18} className={`text-slate-400 transition-transform ${openCommon ? "rotate-180" : ""}`} />
-          </div>
-        </button>
-        {openCommon && (
-          <div className="px-5 pb-5 mps-fade-in space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <NumberField label="Basement Meter at Terrace" value={form.common.basementTerrace} onChange={v => updateCommon("basementTerrace", v)} />
-              <NumberField label="Basement Meter at Parking" value={form.common.basementParking} onChange={v => updateCommon("basementParking", v)} />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Metric label="Common" value={commonTotal} />
-              <Metric label="Difference" value={commonTotal - totalCons} />
-              <Metric label="Water Loss" value={loss} highlight />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Section 4: Results Table */}
