@@ -50,6 +50,7 @@ function Dashboard() {
   const waterBill = rec?.water?.bwssb ?? 0;
   const flats = settings.flats > 0 ? settings.flats : 4;
   const perFlat = perFlatShare(rec, flats);
+  const equalShare = (electricityAmount(rec?.electricity) + watchmanTotal(rec?.watchman) + miscTotal(rec)) / flats;
 
   return (
     <div className="mps-fade-in space-y-6 pb-32">
