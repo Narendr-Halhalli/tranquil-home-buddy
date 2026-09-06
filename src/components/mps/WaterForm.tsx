@@ -28,12 +28,28 @@ export function WaterForm({
   const [confirmDel, setConfirmDel] = useState(false);
   const [openFloor, setOpenFloor] = useState<FloorKey | null>("ground");
 
-  const [form, setForm] = useState<WaterData>(() => normalizeWater(existing?.water));
+  // Carry forward previous month's ending readings as this month's starting readings
+  const buildForm = (): WaterData => {
+    const base = normalizeWater(existing?.water);
+    if (existing?.water) return base;
+    const [y, m] = month.split("-").map(Number);
+    const prevKey = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+    const prev = records.find(r => r.month === prevKey)?.water;
+    if (!prev) return base;
+    const prevN = normalizeWater(prev);
+    for (const f of FLOORS) {
+      base.floors[f.key].borewellStart = prevN.floors[f.key].borewellEnd;
+      base.floors[f.key].kaveriStart = prevN.floors[f.key].kaveriEnd;
+    }
+    return base;
+  };
+
+  const [form, setForm] = useState<WaterData>(buildForm);
   const key = month + (existing ? "1" : "0");
   const [lastKey, setLastKey] = useState(key);
   if (lastKey !== key) {
     setLastKey(key);
-    setForm(normalizeWater(existing?.water));
+    setForm(buildForm());
   }
 
   const updateFloor = (fk: FloorKey, k: keyof FloorReading, v: number) =>
