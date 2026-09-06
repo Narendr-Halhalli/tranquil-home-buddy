@@ -12,7 +12,6 @@ import {
   kaveriConsumption,
   floorConsumption,
   totalFloorConsumption,
-  commonReadingTotal,
   waterLoss,
   costPerLitre,
 } from "@/lib/mps-store";
@@ -43,7 +42,6 @@ export function WaterForm({
     setForm(f => ({ ...f, [k]: v }));
 
   const totalCons = useMemo(() => totalFloorConsumption(form), [form]);
-  const commonTotal = useMemo(() => commonReadingTotal(form), [form]);
   const loss = useMemo(() => waterLoss(form), [form]);
   const cpl = useMemo(() => costPerLitre(form), [form]);
 
