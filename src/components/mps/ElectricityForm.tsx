@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useActiveMonth } from "@/hooks/useActiveMonth";
 import { toast } from "sonner";
 import { Save, Trash2, Copy, Pencil, Plus, X } from "lucide-react";
 import type { MonthRecord, ElectricityData } from "@/lib/mps-store";
@@ -36,8 +37,9 @@ export function ElectricityForm({
   records: MonthRecord[];
   setRecords: (fn: (r: MonthRecord[]) => MonthRecord[]) => void;
 }) {
+  const { month: activeMonth } = useActiveMonth();
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<Draft>(() => emptyDraft());
+  const [draft, setDraft] = useState<Draft>(() => emptyDraft(activeMonth));
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const editing = records.some(r => r.month === draft.month && r.electricity);
 
@@ -50,7 +52,7 @@ export function ElectricityForm({
     [records]
   );
 
-  const startNew = () => { setDraft(emptyDraft()); setOpen(true); };
+  const startNew = () => { setDraft(emptyDraft(activeMonth)); setOpen(true); };
   const startEdit = (month: string) => {
     const rec = records.find(r => r.month === month);
     if (!rec?.electricity) return;

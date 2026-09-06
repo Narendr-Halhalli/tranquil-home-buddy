@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { Droplets, Zap, Wrench, Wallet, TrendingUp, TrendingDown, Download, FileText } from "lucide-react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useActiveMonth } from "@/hooks/useActiveMonth";
 import type { MonthRecord, Settings } from "@/lib/mps-store";
 import {
   DEFAULT_SETTINGS,
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/")({
 function Dashboard() {
   const [records] = useLocalStorage<MonthRecord[]>("mps.records", []);
   const [settings, setSettings] = useLocalStorage<Settings>("mps.settings", DEFAULT_SETTINGS);
-  const [activeMonth, setActiveMonth] = useLocalStorage<string>("mps.activeMonth", currentMonthKey());
+  const { month: activeMonth, setMonth: setActiveMonth } = useActiveMonth();
 
   const rec = useMemo(() => records.find(r => r.month === activeMonth), [records, activeMonth]);
   const prev = useMemo(() => records.find(r => r.month === prevMonthKey(activeMonth)), [records, activeMonth]);

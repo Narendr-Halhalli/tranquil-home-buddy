@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useActiveMonth } from "@/hooks/useActiveMonth";
 import { toast } from "sonner";
 import { Save, Trash2, ChevronDown } from "lucide-react";
 import type { MonthRecord, WaterData, FloorKey, FloorReading } from "@/lib/mps-store";
@@ -23,7 +24,7 @@ export function WaterForm({
   records: MonthRecord[];
   setRecords: (fn: (r: MonthRecord[]) => MonthRecord[]) => void;
 }) {
-  const [month, setMonth] = useState(currentMonthKey());
+  const { month, setMonth } = useActiveMonth();
   const existing = records.find(r => r.month === month);
   const [confirmDel, setConfirmDel] = useState(false);
   const [openFloor, setOpenFloor] = useState<FloorKey | null>("ground");

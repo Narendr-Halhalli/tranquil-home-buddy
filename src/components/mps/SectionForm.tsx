@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useActiveMonth } from "@/hooks/useActiveMonth";
 import { toast } from "sonner";
 import { Trash2, Save } from "lucide-react";
 import type { MonthRecord, WaterData, FloorKey } from "@/lib/mps-store";
@@ -76,7 +77,7 @@ export function SectionForm({
   records: MonthRecord[];
   setRecords: (fn: (r: MonthRecord[]) => MonthRecord[]) => void;
 }) {
-  const [month, setMonth] = useState(currentMonthKey());
+  const { month, setMonth } = useActiveMonth();
   const [confirmDel, setConfirmDel] = useState(false);
   const existing = records.find(r => r.month === month);
   const data = existing?.[section];
