@@ -98,7 +98,6 @@ export function WaterForm({
             <Metric label="BWSSB Bill" value={form.bwssb || 0} unit="₹" />
             <Metric label="₹ / Litre" value={Math.round(cpl * 100) / 100} />
             <Metric label="Block Total" value={totalCons} highlight />
-            <Metric label="Common" value={commonTotal} />
             <Metric label="Loss" value={loss} />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3">
