@@ -103,6 +103,30 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* Price each floor pays: water by percentage, rest split equally */}
+      <div className="rounded-[28px] bg-white/85 backdrop-blur-xl border border-white/70 shadow-[0_10px_30px_-15px_rgba(30,64,175,0.25)] p-5">
+        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Price Each Floor Pays</h3>
+        <div className="mt-3 space-y-2">
+          {FLOORS.map((f) => {
+            const total = shares[f.key] + equalShare;
+            return (
+              <div key={f.key} className="flex items-center justify-between rounded-2xl bg-secondary/60 px-4 py-3">
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">{f.label}</div>
+                  <div className="text-[10px] text-slate-500">
+                    Water {c}{Math.round(shares[f.key]).toLocaleString()} + Equal share {c}{Math.round(equalShare).toLocaleString()}
+                  </div>
+                </div>
+                <div className="text-lg font-bold text-primary tabular-nums">{c}{Math.round(total).toLocaleString()}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-3 text-[11px] text-slate-400">
+          Water is split by each floor's consumption percentage; electricity, watchman &amp; misc are divided equally across {flats} flats.
+        </div>
+      </div>
+
       {/* Water summary with floor split */}
       <div className="rounded-[28px] bg-white/85 backdrop-blur-xl border border-white/70 shadow-[0_10px_30px_-15px_rgba(30,64,175,0.25)] p-5">
         <div className="flex items-center gap-3">
