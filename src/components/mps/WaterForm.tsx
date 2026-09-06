@@ -28,7 +28,6 @@ export function WaterForm({
   const existing = records.find(r => r.month === month);
   const [confirmDel, setConfirmDel] = useState(false);
   const [openFloor, setOpenFloor] = useState<FloorKey | null>("ground");
-  const [openCommon, setOpenCommon] = useState(true);
 
   const [form, setForm] = useState<WaterData>(() => normalizeWater(existing?.water));
   const key = month + (existing ? "1" : "0");
@@ -40,8 +39,6 @@ export function WaterForm({
 
   const updateFloor = (fk: FloorKey, k: keyof FloorReading, v: number) =>
     setForm(f => ({ ...f, floors: { ...f.floors, [fk]: { ...f.floors[fk], [k]: v } } }));
-  const updateCommon = (k: "basementTerrace" | "basementParking", v: number) =>
-    setForm(f => ({ ...f, common: { ...f.common, [k]: v } }));
   const updateTop = <K extends keyof WaterData>(k: K, v: WaterData[K]) =>
     setForm(f => ({ ...f, [k]: v }));
 
