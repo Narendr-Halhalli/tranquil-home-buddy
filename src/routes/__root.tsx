@@ -12,6 +12,7 @@ import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BottomNav } from "../components/mps/BottomNav";
+import { MonthGate } from "../components/mps/MonthGate";
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
@@ -78,6 +79,7 @@ function RootComponent() {
           <Outlet />
         </div>
         <BottomNav />
+        <MonthGate />
         <Toaster position="top-center" richColors />
       </div>
     </QueryClientProvider>

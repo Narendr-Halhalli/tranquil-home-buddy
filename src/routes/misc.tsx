@@ -12,6 +12,7 @@ import {
   MONTH_NAMES,
   miscTotal,
 } from "@/lib/mps-store";
+import { useActiveMonth } from "@/hooks/useActiveMonth";
 import { PageHeader } from "@/components/mps/PageHeader";
 
 export const Route = createFileRoute("/misc")({
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/misc")({
 function MiscPage() {
   const [records, setRecords] = useLocalStorage<MonthRecord[]>("mps.records", []);
   const [settings] = useLocalStorage<Settings>("mps.settings", DEFAULT_SETTINGS);
-  const [month, setMonth] = useState(currentMonthKey());
+  const { month, setMonth } = useActiveMonth();
 
   const rec = records.find(r => r.month === month);
   const items = useMemo(() => rec?.misc ?? [], [rec]);
