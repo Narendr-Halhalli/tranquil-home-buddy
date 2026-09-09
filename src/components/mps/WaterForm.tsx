@@ -105,14 +105,11 @@ export function WaterForm({
             <MonthPicker value={month} onChange={setMonth} />
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <Metric label="Litres Recv." value={form.totalLitresReceived || 0} />
             <Metric label="BWSSB Bill" value={form.bwssb || 0} unit="₹" />
             <Metric label="₹ / Litre" value={Math.round(cpl * 100) / 100} />
             <Metric label="Block Total" value={totalCons} highlight />
-            <Metric label="Loss" value={loss} />
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <NumberField label="Total Litres Received" compact value={form.totalLitresReceived || 0} onChange={v => updateTop("totalLitresReceived", v)} />
+          <div className="mt-3">
             <NumberField label="BWSSB Bill Amount" compact value={form.bwssb} onChange={v => updateTop("bwssb", v)} />
           </div>
         </div>
