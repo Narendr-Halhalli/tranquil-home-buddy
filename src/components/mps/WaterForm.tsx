@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { Save, Trash2, ChevronDown } from "lucide-react";
 import type { MonthRecord, WaterData, FloorKey, FloorReading } from "@/lib/mps-store";
 import {
-  currentMonthKey,
   formatMonthKey,
   MONTH_NAMES,
   FLOORS,
